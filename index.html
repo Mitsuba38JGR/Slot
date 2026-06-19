@@ -474,15 +474,15 @@
       // 1. Definition of complete symbol database configurations
       // Probability of big wins is reduced by lowering weights of high symbols and adding blank symbols ("ハズレ").
       const symbols = [
-        { id: 'rainbow7', name: '虹７', emoji: '7', textStyle: 'text-rainbow', multiplier: 20, weight: 2 },
-        { id: 'gold7', name: '金７', emoji: '7', textStyle: 'text-gold', multiplier: 15, weight: 3 },
-        { id: 'star', name: '星', emoji: '⭐', textStyle: 'text-yellow-300', multiplier: 8, weight: 6 },
-        { id: 'bell', name: 'ベル', emoji: '🔔', textStyle: 'text-amber-400', multiplier: 5, weight: 10 },
-        { id: 'silverCoin', name: '銀貨', emoji: '🪙', textStyle: 'text-slate-300', multiplier: 3, weight: 13 },
-        { id: 'watermelon', name: 'スイカ', emoji: '🍉', textStyle: '', multiplier: 2, weight: 16 },
-        { id: 'cherry', name: 'チェリー', emoji: '🍒', textStyle: '', multiplier: 1, weight: 15 },
+        { id: 'rainbow7', name: '虹７', emoji: '7', textStyle: 'text-rainbow', multiplier: 20, weight: 3 },
+        { id: 'gold7', name: '金７', emoji: '7', textStyle: 'text-gold', multiplier: 15, weight: 5 },
+        { id: 'star', name: '星', emoji: '⭐', textStyle: 'text-yellow-300', multiplier: 8, weight: 10 },
+        { id: 'bell', name: 'ベル', emoji: '🔔', textStyle: 'text-amber-400', multiplier: 5, weight: 12 },
+        { id: 'silverCoin', name: '銀貨', emoji: '🪙', textStyle: 'text-slate-300', multiplier: 3, weight:15 },
+        { id: 'watermelon', name: 'スイカ', emoji: '🍉', textStyle: '', multiplier: 2, weight: 20 },
+        { id: 'cherry', name: 'チェリー', emoji: '🍒', textStyle: '', multiplier: 1, weight: 25 },
         { id: 'replay', name: 'Again', emoji: '🔄', textStyle: 'text-indigo-400', multiplier: 1, weight: 10 },
-        { id: 'blank', name: 'ハズレ', emoji: '✖️', textStyle: 'text-slate-600', multiplier: 0, weight: 25 }
+        { id: 'blank', name: 'ハズレ', emoji: '✖️', textStyle: 'text-slate-600', multiplier: 0, weight: 50 }
       ];
 
       // Build out an accurate physical mathematical strip reel containing 100 slots to enforce physical constraints
