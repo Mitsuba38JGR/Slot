@@ -1,0 +1,1505 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3連式アナログ・シミュレーション・スロット</title>
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      /* Apply theme variables to tailwind */
+      body {
+        font-family: 'Space Grotesk', system-ui, sans-serif;
+        background-color: #050510;
+        color: #ffffff;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      .font-mono {
+        font-family: 'JetBrains Mono', monospace;
+      }
+      /* Custom glowing scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #090915;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #303050;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #4f46e5;
+      }
+      /* Rainbow 7 text animation styling */
+      .text-rainbow {
+        background: linear-gradient(
+          to right,
+          #ef4444,
+          #f59e0b,
+          #10b981,
+          #3b82f6,
+          #8b5cf6,
+          #ec4899,
+          #ef4444
+        );
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: rainbowGrad 3s linear infinite;
+      }
+      @keyframes rainbowGrad {
+        0% { background-position: 0% center; }
+        100% { background-position: 200% center; }
+      }
+      /* Gold 7 text gradient styling */
+      .text-gold {
+        background: linear-gradient(to bottom, #fffbeb, #fbbf24, #d97706);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      /* Custom animations */
+      @keyframes pulseglow {
+        0%, 100% { filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.4)); }
+        50% { filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8)); }
+      }
+      .pulse-glow {
+        animation: pulseglow 2s infinite;
+      }
+    </style>
+  </head>
+  <body class="selection:bg-indigo-500/30 selection:text-white">
+
+    <div class="max-w-7xl mx-auto px-4 py-8 sm:py-12">
+      <!-- Header Banner Section -->
+      <div class="flex flex-col items-center justify-center mb-8 text-center">
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 text-xs font-semibold tracking-wider font-mono uppercase mb-4">
+          <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-ping"></span>
+          Standalone Board Game Utility
+        </div>
+        <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mb-2">
+          <span>⚡ TRIPLE ANALOG</span>
+          <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-500 text-transparent bg-clip-text">SLOT ENGINE</span>
+        </h1>
+        <p class="text-sm text-slate-400 max-w-xl">
+          ボードゲームやアナログゲーム用に、お互いの点数・所持金をリアルタイムに直接自由入力できるスロットマシンです。ボタンを押すだけで停止順は自由自在！
+        </p>
+      </div>
+
+      <!-- Main Game Dashboard System -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left Side: Core Slot Machine Screen -->
+        <div class="lg:col-span-7 flex flex-col items-center gap-6">
+
+          <!-- Controller: Top Control / Sound Panel -->
+          <div class="w-full flex items-center justify-between bg-[#101025]/80 border border-[#303050] rounded-2xl px-6 py-3.5 backdrop-blur-md">
+            <div class="flex items-center gap-2">
+              <span class="text-emerald-400 text-sm font-mono font-bold">● ONLINE STATE</span>
+            </div>
+            <!-- Sound Effects Toggle Button -->
+            <button id="toggle-sound-btn" class="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 transition-all">
+              <span id="sound-icon">🔊</span>
+              <span id="sound-text">SOUND: ON</span>
+            </button>
+          </div>
+
+          <!-- The main game cabinet container -->
+          <div class="relative w-full bg-[#0c0c1e] p-5 sm:p-7 rounded-3xl border-4 border-[#303050] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8),0_0_40px_rgba(99,102,241,0.15)] overflow-hidden">
+            <!-- Glossy LED highlights along the upper frame cabinet -->
+            <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-red-500 via-amber-400 via-emerald-400 via-cyan-400 via-indigo-500 to-pink-500 opacity-80"></div>
+            
+            <!-- Highlight LED Border decoration inside cabinet -->
+            <div class="absolute inset-0 border-2 border-indigo-500/20 rounded-[28px] pointer-events-none"></div>
+
+            <!-- Payline Indicator Grid Overlay Panel (Absolute visual guides) -->
+            <div class="absolute left-1 right-1 top-[20px] bottom-[20px] pointer-events-none z-10 hidden" id="payline-overlay">
+              <!-- Horizontal line middle -->
+              <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <!-- Line 1 Top -->
+                <line id="svg-line-0" x1="10" y1="16.6%" x2="calc(100% - 10)" y2="16.6%" stroke="#ec4899" stroke-width="4" stroke-linecap="round" stroke-dasharray="8,8" class="animate-pulse hidden" />
+                <!-- Line 2 Middle -->
+                <line id="svg-line-1" x1="10" y1="50%" x2="calc(100% - 10)" y2="50%" stroke="#eab308" stroke-width="4" stroke-linecap="round" stroke-dasharray="8,8" class="animate-pulse hidden" />
+                <!-- Line 3 Bottom -->
+                <line id="svg-line-2" x1="10" y1="83.3%" x2="calc(100% - 10)" y2="83.3%" stroke="#3b82f6" stroke-width="4" stroke-linecap="round" stroke-dasharray="8,8" class="animate-pulse hidden" />
+                <!-- Diagonal 1 Left-Top -> Right-Bottom -->
+                <line id="svg-line-3" x1="10" y1="16.6%" x2="calc(100% - 10)" y2="83.3%" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-dasharray="8,8" class="animate-pulse hidden" />
+                <!-- Diagonal 2 Left-Bottom -> Right-Top -->
+                <line id="svg-line-4" x1="10" y1="83.3%" x2="calc(100% - 10)" y2="16.6%" stroke="#a855f7" stroke-width="4" stroke-linecap="round" stroke-dasharray="8,8" class="animate-pulse hidden" />
+              </svg>
+            </div>
+
+            <!-- Reels Grid Row Content -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-4 relative">
+              
+              <!-- Reel 1 -->
+              <div class="relative h-[250px] sm:h-[320px] bg-[#050510] border-2 border-[#303050] rounded-2xl overflow-hidden shadow-[inset_0_0_20px_rgba(0,0,0,0.9)] flex flex-col justify-center">
+                <div class="absolute inset-x-0 top-0 h-10 pointer-events-none bg-gradient-to-b from-[#050510] to-transparent z-10"></div>
+                <!-- Reel Content strip wrapper -->
+                <div id="reel-container-0" class="flex flex-col transition-all duration-75 relative" style="top: 0px;">
+                  <!-- Static contents populated dynamically -->
+                </div>
+                <div class="absolute inset-x-0 bottom-0 h-10 pointer-events-none bg-gradient-to-t from-[#050510] to-transparent z-10"></div>
+              </div>
+
+              <!-- Reel 2 -->
+              <div class="relative h-[250px] sm:h-[320px] bg-[#050510] border-2 border-[#303050] rounded-2xl overflow-hidden shadow-[inset_0_0_20px_rgba(0,0,0,0.9)] flex flex-col justify-center">
+                <div class="absolute inset-x-0 top-0 h-10 pointer-events-none bg-gradient-to-b from-[#050510] to-transparent z-10"></div>
+                <!-- Reel Content strip wrapper -->
+                <div id="reel-container-1" class="flex flex-col transition-all duration-75 relative" style="top: 0px;">
+                  <!-- Static contents populated dynamically -->
+                </div>
+                <div class="absolute inset-x-0 bottom-0 h-10 pointer-events-none bg-gradient-to-t from-[#050510] to-transparent z-10"></div>
+              </div>
+
+              <!-- Reel 3 -->
+              <div class="relative h-[250px] sm:h-[320px] bg-[#050510] border-2 border-[#303050] rounded-2xl overflow-hidden shadow-[inset_0_0_20px_rgba(0,0,0,0.9)] flex flex-col justify-center">
+                <div class="absolute inset-x-0 top-0 h-10 pointer-events-none bg-gradient-to-b from-[#050510] to-transparent z-10"></div>
+                <!-- Reel Content strip wrapper -->
+                <div id="reel-container-2" class="flex flex-col transition-all duration-75 relative" style="top: 0px;">
+                  <!-- Static contents populated dynamically -->
+                </div>
+                <div class="absolute inset-x-0 bottom-0 h-10 pointer-events-none bg-gradient-to-t from-[#050510] to-transparent z-10"></div>
+              </div>
+
+            </div>
+
+            <!-- Individual STOP button controls under each Reel -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-4 mt-5 relative z-20">
+              <button id="stop-btn-0" disabled class="py-3 sm:py-4 rounded-xl flex flex-col items-center justify-center border font-bold uppercase tracking-wider transition-all duration-150 select-none bg-slate-900 border-slate-800 text-slate-500 opacity-40 cursor-not-allowed">
+                <span class="text-[9px] opacity-70 font-mono">REEL 1</span>
+                <span class="text-sm font-black">STOP</span>
+              </button>
+              <button id="stop-btn-1" disabled class="py-3 sm:py-4 rounded-xl flex flex-col items-center justify-center border font-bold uppercase tracking-wider transition-all duration-150 select-none bg-slate-900 border-slate-800 text-slate-500 opacity-40 cursor-not-allowed">
+                <span class="text-[9px] opacity-70 font-mono">REEL 2</span>
+                <span class="text-sm font-black">STOP</span>
+              </button>
+              <button id="stop-btn-2" disabled class="py-3 sm:py-4 rounded-xl flex flex-col items-center justify-center border font-bold uppercase tracking-wider transition-all duration-150 select-none bg-slate-900 border-slate-800 text-slate-500 opacity-40 cursor-not-allowed">
+                <span class="text-[9px] opacity-70 font-mono">REEL 3</span>
+                <span class="text-sm font-black">STOP</span>
+              </button>
+            </div>
+
+            <!-- Active line centering background highlighting guide lines -->
+            <div class="absolute -left-1 right-0 top-1/2 -translate-y-1/2 h-[83px] sm:h-[106px] border-y border-indigo-500/10 bg-indigo-500/[0.012] pointer-events-none z-0"></div>
+          </div>
+
+          <!-- Bottom: Interactive Play Controllers -->
+          <div class="w-full bg-[#101025]/80 border border-[#303050] rounded-2xl p-5 sm:p-6 shadow-2xl backdrop-blur-md">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+              
+              <!-- Editable Credit Balance Field for board game flexibility -->
+              <div class="flex items-center gap-3 w-full sm:w-auto bg-black/45 border border-[#303050] rounded-xl px-4 py-2.5 focus-within:border-emerald-500/80 transition-all">
+                <span class="text-xl">🪙</span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[9px] text-[#8e9299] uppercase font-bold tracking-widest leading-none">所持金 Balance (自由入力)</div>
+                  <div class="flex items-center gap-1 mt-1">
+                    <input
+                      id="balance-input"
+                      type="number"
+                      value="1000"
+                      class="w-28 bg-transparent text-xl font-bold font-mono text-emerald-400 outline-none border-none p-0 focus:ring-0"
+                      title="数値を直接クリックして所持金を自由に変更できます"
+                      placeholder="0"
+                    />
+                    <span class="text-xs font-semibold text-slate-500">pt</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bet Amount Controllers -->
+              <div class="flex items-center justify-between gap-4 w-full sm:w-auto bg-black/45 border border-[#303050] rounded-xl px-4 py-2.5">
+                <div class="mr-4">
+                  <div class="text-[9px] text-[#8e9299] uppercase font-bold tracking-widest leading-none">ベット額 Bet</div>
+                  <div class="text-xl font-bold font-mono text-amber-400 mt-1" id="bet-display">30 pt</div>
+                </div>
+                <div class="flex gap-1.5">
+                  <button id="bet-dec-btn" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 font-bold hover:bg-slate-800 hover:text-white transition-all select-none">-</button>
+                  <button id="bet-preset-10" class="px-2.5 h-8 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-slate-400 hover:text-white hover:bg-slate-800 transition-all select-none">10</button>
+                  <button id="bet-preset-30" class="px-2.5 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-xs font-mono text-indigo-300 hover:text-white transition-all select-none">30</button>
+                  <button id="bet-inc-btn" class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 font-bold hover:bg-slate-800 hover:text-white transition-all select-none">+</button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Free Spin Notice Panel -->
+            <div id="free-spins-panel" class="hidden mt-4 bg-gradient-to-r from-purple-900/30 via-pink-900/10 to-purple-900/30 border border-pink-500/25 rounded-xl p-3 text-center sm:text-left flex items-center justify-center sm:justify-start gap-3 animate-pulse">
+              <span class="text-xl">🔄</span>
+              <div>
+                <span class="text-xs font-bold text-pink-400 uppercase tracking-widest leading-none block">Free Spin Active!</span>
+                <span class="text-sm font-semibold text-white">残り <span id="free-spins-count" class="font-mono text-base font-black">0</span> 回のフリースピン（元手消費なし）</span>
+              </div>
+            </div>
+
+            <!-- Spin / Trigger Core Button -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-4">
+              <button id="spin-btn" class="sm:col-span-3 py-4 rounded-2xl font-black text-lg tracking-wider text-white border-2 transition-all shadow-xl select-none cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] bg-indigo-600 hover:bg-indigo-500 border-indigo-400 shadow-indigo-600/30">
+                🚀 レバーを引く (SPIN/START)
+              </button>
+              <button id="auto-btn" class="py-4 rounded-2xl font-black text-sm tracking-wider border text-slate-300 bg-slate-900 border-slate-800 hover:bg-slate-800 transition-all select-none cursor-pointer leading-tight">
+                🔄 オート機能<br><span class="text-[10px] font-normal font-mono opacity-80" id="auto-status-text">OFF</span>
+              </button>
+            </div>
+
+            <!-- Action Status Output Message Text Box -->
+            <p id="game-message" class="text-center text-xs text-indigo-300 font-medium font-sans mt-4 tracking-wide h-4">
+              準備完了！ベッド額を調整してスタートしてください。
+            </p>
+
+          </div>
+
+        </div>
+
+        <!-- Right Side: Statistics & Config Reference Tables -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+
+          <!-- Results Display Billboard Banner Window -->
+          <div id="win-billboard" class="hidden bg-[#151210] border-2 border-amber-500/40 rounded-2xl p-5 shadow-2xl relative overflow-hidden transition-all duration-300">
+            <!-- Light sparkles decoration -->
+            <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-gradient-radial from-amber-500/15 via-transparent to-transparent pointer-events-none"></div>
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5" id="win-heading">
+                🎉 当たり! (HIT OVERVIEW)
+              </h3>
+              <span class="text-xs font-mono text-slate-400 font-semibold" id="win-combo-type">LINE HIT</span>
+            </div>
+            <div class="text-3xl font-black font-mono text-amber-300 tracking-tight" id="win-total-amount">
+              +0 pt
+            </div>
+            <p class="text-xs text-slate-400 mt-1" id="win-detail-txt">
+              スイカ (x20) など、複数ラインでの配当が成立しました！
+            </p>
+          </div>
+
+          <!-- Session Statistics Panel -->
+          <div class="bg-[#101025]/80 border border-[#303050] rounded-2xl p-6 shadow-2xl backdrop-blur-md">
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <span>📊</span> セッション統計情報 <span class="text-xs font-normal text-slate-400 font-mono">(Live Stats)</span>
+              </h2>
+              <button id="reset-stats-btn" class="text-[10px] bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white px-2 py-1 rounded transition-all font-semibold select-none">統計リセット</button>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+              <!-- Spins card -->
+              <div class="bg-black/40 border border-[#303050]/60 p-3 rounded-xl">
+                <div class="text-xs text-[#8e9299] mb-1">総スピン数</div>
+                <div class="text-lg font-bold font-mono text-white flex items-baseline gap-1">
+                  <span id="stat-spins">0</span>
+                  <span class="text-xs font-normal text-slate-500">回</span>
+                </div>
+              </div>
+              <!-- Wins card -->
+              <div class="bg-black/40 border border-[#303050]/60 p-3 rounded-xl">
+                <div class="text-xs text-[#8e9299] mb-1">配当獲得率</div>
+                <div class="text-lg font-bold font-mono text-pink-400 flex items-baseline gap-1">
+                  <span id="stat-win-rate">0.0</span>
+                  <span class="text-xs font-normal text-slate-500">%</span>
+                </div>
+              </div>
+              <!-- Peak Win -->
+              <div class="bg-black/40 border border-[#303050]/60 p-3 rounded-xl">
+                <div class="text-xs text-[#8e9299] mb-1 font-sans">単発最大配当</div>
+                <div class="text-lg font-bold font-mono text-[#ffd700] flex items-baseline gap-1">
+                  <span id="stat-max-win">0</span>
+                  <span class="text-xs font-normal text-amber-500/70">pt</span>
+                </div>
+              </div>
+              <!-- Net profit -->
+              <div class="bg-black/40 border border-[#303050]/60 p-3 rounded-xl">
+                <div class="text-xs text-[#8e9299] mb-1">純利益 / 損失</div>
+                <div class="text-lg font-bold font-mono flex items-baseline gap-1" id="stat-net-wrapper">
+                  <span id="stat-net-flow">0</span>
+                  <span class="text-xs font-normal text-slate-500">pt</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Financial flow details -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Left: Money Info -->
+              <div class="bg-black/20 border border-[#303050]/40 rounded-xl p-4 space-y-2.5">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">収支内訳 (Flows)</h3>
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-slate-400">総ベット額:</span>
+                  <span class="font-mono text-slate-300" id="stat-total-bets">0 pt</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-slate-400">総配当付与額:</span>
+                  <span class="font-mono text-amber-400" id="stat-total-wins-volume">+0 pt</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-slate-400">フリースピン数:</span>
+                  <span class="font-mono text-purple-400" id="stat-total-free-count">0 回</span>
+                </div>
+              </div>
+              <!-- Right: Hit breakdown -->
+              <div class="bg-black/20 border border-[#303050]/40 rounded-xl p-4 space-y-1.5">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">配当発生数 (Match Type)</h3>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400">🎉 ３種同一当たり (Hits):</span>
+                  <span class="font-mono font-medium text-amber-400" id="stat-count-hit">0 回</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400">🎰 ２種偶発ジャックポット (JP):</span>
+                  <span class="font-mono font-medium text-pink-400" id="stat-count-jp">0 回</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400">🔄 Againリプレイ発生:</span>
+                  <span class="font-mono font-medium text-purple-400" id="stat-count-replay">0 回</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reel Payout Map & Odds Reference Sheet -->
+          <div class="bg-[#101025]/80 border border-[#303050] rounded-2xl p-6 shadow-2xl backdrop-blur-md">
+            <h2 class="text-xl font-bold text-white flex items-center gap-2 mb-4">
+              <span>📋</span> 絵柄と配当表 <span class="text-xs font-normal text-slate-400 font-mono">(Payouts & Probabilities)</span>
+            </h2>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr class="border-b border-[#303050] text-[#8e9299]">
+                    <th class="pb-2 font-semibold">絵柄 (Symbol)</th>
+                    <th class="pb-2 font-mono text-right">出現確率 (Strip Prob)</th>
+                    <th class="pb-2 text-right">当たり(3揃い)</th>
+                    <th class="pb-2 text-right">JP(2揃い)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[#303050]/30" id="payout-table-body">
+                  <!-- Generated dynamically in Javascript to reflect exact current multipliers -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Live Session Logs Panel -->
+          <div class="bg-[#101025]/80 border border-[#303050] rounded-2xl p-6 shadow-2xl backdrop-blur-md">
+            <h2 class="text-xl font-bold text-white flex items-center gap-2 mb-4">
+              <span>📜</span> スピン歴史ログ <span class="text-xs font-normal text-slate-400 font-mono">(Recent Reels History)</span>
+            </h2>
+            <div class="space-y-2 max-h-[160px] overflow-y-auto pr-1" id="session-logs-container">
+              <!-- Logs populated dynamically -->
+              <p class="text-slate-500 text-xs text-center py-4 italic">まだ記録がありません。リールを引いてください！</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Secret Command & Custom Probability Controller Panel -->
+      <div class="mt-8 bg-[#101025]/80 border border-[#303050] rounded-2xl p-6 shadow-2xl backdrop-blur-md">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <span>🔧</span> 確率管理モード設定 (Passphrase Command)
+            </h3>
+            <p class="text-xs text-slate-400">
+              「_mityaki_」と入力すると、絵柄ごとの出現ウェイト（確率）を自由に変更できる裏モードが起動します。
+            </p>
+          </div>
+          <div class="w-full sm:w-auto relative">
+            <input
+              id="secret-command-input"
+              type="text"
+              placeholder="パスワードを入力してください..."
+              class="w-full sm:w-64 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-sm leading-tight text-slate-200 outline-none transition-all placeholder:text-slate-600 font-mono"
+            />
+          </div>
+        </div>
+
+        <!-- Secret Cheat Configurator Panel (hidden by default) -->
+        <div id="cheat-panel" class="hidden mt-6 pt-6 border-t border-[#303050]/50">
+          <div class="bg-indigo-950/20 border border-indigo-500/20 rounded-xl p-4 sm:p-5 mb-6">
+            <h4 class="text-base font-bold text-indigo-400 flex items-center gap-2">
+              <span>🔮</span> 確率カスタマイズ（裏モード有効中）
+            </h4>
+            <p class="text-xs text-slate-300 mt-1">
+              各配当絵柄の重み（ウェイト：0〜100）を変更できます。
+              ウェイトを変更するたびにリールの物理配置がリアルタイムで再生成され、配当表の全体確率も同期します。
+            </p>
+          </div>
+
+          <!-- Slider Inputs Render Target -->
+          <div id="cheat-sliders-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Populated dynamically via javascript -->
+          </div>
+
+          <!-- Cheat Actions & Status Summary -->
+          <div class="mt-6 flex flex-wrap gap-4 items-center justify-between bg-black/35 rounded-xl p-4 border border-[#303050]/40">
+            <div class="text-xs text-slate-400">
+              📈 現在の総割り当てウェイト: <span id="cheat-total-weight" class="font-mono font-bold text-indigo-400">0</span>
+            </div>
+            <div class="flex gap-2">
+              <button id="cheat-preset-high" class="px-3.5 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs rounded-xl transition-all font-semibold active:scale-95 cursor-pointer select-none">
+                🔥 激熱設定 (７テンパイ極大)
+              </button>
+              <button id="cheat-preset-low" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs rounded-xl transition-all font-semibold active:scale-95 cursor-pointer select-none">
+                💀 絶望設定 (ハズレ8割)
+              </button>
+              <button id="cheat-reset-default" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-xl transition-all font-semibold active:scale-95 cursor-pointer select-none">
+                🔄 初期状態に戻す
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Script Block containing whole offline gaming logic model -->
+    <script>
+      // 1. Definition of complete symbol database configurations
+      // Probability of big wins is reduced by lowering weights of high symbols and adding blank symbols ("ハズレ").
+      const symbols = [
+        { id: 'rainbow7', name: '虹７', emoji: '7', textStyle: 'text-rainbow', multiplier: 20, weight: 2 },
+        { id: 'gold7', name: '金７', emoji: '7', textStyle: 'text-gold', multiplier: 15, weight: 3 },
+        { id: 'star', name: '星', emoji: '⭐', textStyle: 'text-yellow-300', multiplier: 8, weight: 6 },
+        { id: 'bell', name: 'ベル', emoji: '🔔', textStyle: 'text-amber-400', multiplier: 5, weight: 10 },
+        { id: 'silverCoin', name: '銀貨', emoji: '🪙', textStyle: 'text-slate-300', multiplier: 3, weight: 13 },
+        { id: 'watermelon', name: 'スイカ', emoji: '🍉', textStyle: '', multiplier: 2, weight: 16 },
+        { id: 'cherry', name: 'チェリー', emoji: '🍒', textStyle: '', multiplier: 1, weight: 15 },
+        { id: 'replay', name: 'Again', emoji: '🔄', textStyle: 'text-indigo-400', multiplier: 1, weight: 10 },
+        { id: 'blank', name: 'ハズレ', emoji: '✖️', textStyle: 'text-slate-600', multiplier: 0, weight: 25 }
+      ];
+
+      // Build out an accurate physical mathematical strip reel containing 100 slots to enforce physical constraints
+      let masterStrip = [];
+      let reelStrips = [[], [], []];
+
+      // Shuffle physical strips array randomly to establish pure initial alignments
+      function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+
+      // Algorithm to ensure no adjacent identical symbols exist in the strip (including circular wrap-around)
+      function removeAdjacentDuplicates(arr) {
+        const len = arr.length;
+        if (len <= 1) return;
+        let attempts = 0;
+        while (attempts < 1000) {
+          let conflicts = 0;
+          for (let i = 0; i < len; i++) {
+            const nextIdx = (i + 1) % len;
+            if (arr[i].id === arr[nextIdx].id) {
+              conflicts++;
+              let swapped = false;
+              // Try up to 150 times per conflict to find a clean index to swap
+              for (let tr = 0; tr < 150; tr++) {
+                const j = Math.floor(Math.random() * len);
+                const prevJ = (j - 1 + len) % len;
+                const nextJ = (j + 1) % len;
+
+                // We want to swap the element at `nextIdx` with the element at `j`.
+                // Check if this swap creates conflicts at either position.
+                const valToNextIdx = arr[j];
+                const valToJ = arr[nextIdx];
+
+                const nextPlus1 = (nextIdx + 1) % len;
+
+                // 1. Check if placing valToNextIdx at nextIdx is safe (no conflict with i and nextIdx + 1)
+                const safeAtNextIdx = (valToNextIdx.id !== arr[i].id && valToNextIdx.id !== arr[nextPlus1].id);
+                // 2. Check if placing valToJ at j is safe (no conflict with prevJ and nextJ)
+                const safeAtJ = (valToJ.id !== arr[prevJ].id && valToJ.id !== arr[nextJ].id);
+
+                if (safeAtNextIdx && safeAtJ && j !== i && j !== nextIdx && j !== nextPlus1) {
+                  arr[nextIdx] = valToNextIdx;
+                  arr[j] = valToJ;
+                  swapped = true;
+                  break;
+                }
+              }
+              // If we couldn't find a clean swap after many attempts, force a standard shuffle split
+              if (!swapped) {
+                const j = Math.floor(Math.random() * len);
+                const temp = arr[nextIdx];
+                arr[nextIdx] = arr[j];
+                arr[j] = temp;
+              }
+            }
+          }
+          if (conflicts === 0) {
+            break;
+          }
+          attempts++;
+        }
+      }
+
+      // Helper to retrieve consecutive 3 vertical rows from a circular reel strip
+      function getVisibleSymbolsFromStrip(strip, index) {
+        const len = strip.length;
+        if (len === 0) return [symbols[8], symbols[8], symbols[8]]; // Fallback blank
+        return [
+          strip[(index - 1 + len) % len], // Top Row
+          strip[index % len],             // Center Target Row
+          strip[(index + 1) % len]        // Bottom Row
+        ];
+      }
+
+      // Rebuild the physical 3 circular reel strips dynamically based on current symbol weights
+      function rebuildReelStrips() {
+        masterStrip = [];
+        symbols.forEach(s => {
+          for (let i = 0; i < s.weight; i++) {
+            masterStrip.push(s);
+          }
+        });
+
+        // Safe fallback if total weights are zero
+        if (masterStrip.length === 0) {
+          const blankSym = symbols.find(s => s.id === 'blank') || symbols[symbols.length - 1];
+          masterStrip.push(blankSym);
+        }
+
+        // Copy clone into 3 separate reels
+        reelStrips = [
+          [...masterStrip],
+          [...masterStrip],
+          [...masterStrip]
+        ];
+
+        // Perform dynamic randomizations and circular conflict removal
+        reelStrips.forEach(strip => {
+          shuffleArray(strip);
+          removeAdjacentDuplicates(strip);
+        });
+      }
+
+      // Run initial build of reel strips
+      rebuildReelStrips();
+
+      // 2. Audio Effects synthesizer context engine using Web Audio API
+      const soundEngine = {
+        ctx: null,
+        isMute: false,
+        init() {
+          if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+          }
+        },
+        play(freqs, duration, type = 'sine', decay = true) {
+          if (this.isMute) return;
+          this.init();
+          const now = this.ctx.currentTime;
+          
+          freqs.forEach((f, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gainNode = this.ctx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(f, now);
+            
+            gainNode.gain.setValueAtTime(0.12, now);
+            if (decay) {
+              gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            }
+            
+            osc.connect(gainNode);
+            gainNode.connect(this.ctx.destination);
+            
+            osc.start(now);
+            osc.stop(now + duration);
+          });
+        },
+        playSpin() {
+          this.play([120, 240], 0.25, 'sawtooth');
+        },
+        playReelStop(idx) {
+          const depthFreq = 160 - (idx * 30);
+          this.play([depthFreq], 0.12, 'triangle', true);
+        },
+        playHit() {
+          // Play a beautiful ascending synth cascade
+          this.init();
+          const now = this.ctx.currentTime;
+          const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C major poly
+          notes.forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(f, now + (i * 0.08));
+            g.gain.setValueAtTime(0.1, now + (i * 0.08));
+            g.gain.exponentialRampToValueAtTime(0.001, now + (i * 0.08) + 0.3);
+            osc.connect(g);
+            g.connect(this.ctx.destination);
+            osc.start(now + (i * 0.08));
+            osc.stop(now + (i * 0.08) + 0.35);
+          });
+        },
+        playJackpot() {
+          // Laser laser frequencies sweeps
+          this.init();
+          const now = this.ctx.currentTime;
+          const dur = 1.0;
+          
+          const osc1 = this.ctx.createOscillator();
+          const osc2 = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          
+          osc1.type = 'square';
+          osc2.type = 'sine';
+          
+          osc1.frequency.setValueAtTime(300, now);
+          osc1.frequency.linearRampToValueAtTime(1500, now + dur);
+          
+          osc2.frequency.setValueAtTime(450, now);
+          osc2.frequency.exponentialRampToValueAtTime(1800, now + dur);
+          
+          g.gain.setValueAtTime(0.1, now);
+          g.gain.linearRampToValueAtTime(0.001, now + dur);
+          
+          osc1.connect(g);
+          osc2.connect(g);
+          g.connect(this.ctx.destination);
+          
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + dur);
+          osc2.stop(now + dur);
+        },
+        playCoin() {
+          const freqs = [987.77, 1318.51, 1567.98];
+          this.play(freqs, 0.4, 'sine', true);
+        }
+      };
+
+      // 3. Game state objects
+      let balance = 1000;
+      let currentBet = 30;
+      let freeSpinsRemaining = 0;
+      
+      let isPlaying = false;
+      let isAutoMode = false;
+
+      // Reel states
+      let reelsSpinning = [false, false, false];
+      let stopTargetIndices = [0, 0, 0];
+      let reelPositions = [5, 15, 25]; // current floating position in symbol strip
+      const reelSpeeds = [0.14, 0.16, 0.18]; // visual speed per frame (approx 9-11 symbols per sec)
+      let spinFrameRequestIds = [null, null, null];
+      
+      // Current visible indexes on window initialized safely from the duplicate-free strips
+      let currentVisibleSymbols = [
+        getVisibleSymbolsFromStrip(reelStrips[0], 5), // Reel 1 initial visual
+        getVisibleSymbolsFromStrip(reelStrips[1], 15), // Reel 2 initial visual
+        getVisibleSymbolsFromStrip(reelStrips[2], 25)  // Reel 3 initial visual
+      ];
+
+      // Dynamic reel renderer for smooth visual scrolling sequence and realistic motion blur
+      function renderReelScroll(reelIdx, currentSpeed) {
+        const container = document.getElementById(`reel-container-${reelIdx}`);
+        const parentHeight = container.parentElement.clientHeight;
+        const itemHeight = parentHeight / 3;
+        const strip = reelStrips[reelIdx];
+        const len = strip.length;
+
+        const pos = reelPositions[reelIdx];
+        const integerPart = Math.floor(pos);
+        const fractionalPart = pos - integerPart;
+
+        // Render 5 items for perfect scrolling edge coverage
+        let html = '';
+        for (let offset = -2; offset <= 2; offset++) {
+          const symbolIdx = (integerPart + offset + len) % len;
+          const symbol = strip[symbolIdx];
+          
+          let styleAttr = `style="height: ${itemHeight}px;"`;
+          if (currentSpeed > 0.01) {
+            const maxSpeedValue = Math.max(...reelSpeeds);
+            const speedRatio = Math.min(1, currentSpeed / maxSpeedValue);
+            const blurPx = (speedRatio * 1.8).toFixed(1);
+            const scaleY = (1 + speedRatio * 0.08).toFixed(2);
+            styleAttr = `style="height: ${itemHeight}px; filter: blur(${blurPx}px); transform: scaleY(${scaleY});"`;
+          }
+
+          html += `
+            <div ${styleAttr} class="flex flex-col justify-center items-center relative border-b border-[#303050]/15">
+              ${renderSymbolHtml(symbol)}
+            </div>
+          `;
+        }
+        container.innerHTML = html;
+        
+        // Translate smoothly using the fractional part
+        const translateY = (fractionalPart - 1) * itemHeight;
+        container.style.transform = `translateY(${translateY}px)`;
+      }
+
+      // Live overall statistics trackers
+      const stats = {
+        totalSpins: 0,
+        totalWinsVolume: 0,
+        totalBetsVolume: 0,
+        totalFreeSpinsCount: 0,
+        maxWin: 0,
+        winCount: 0,
+        countHit: 0,
+        countJP: 0,
+        countReplay: 0
+      };
+
+      // Helper function to render a physical strip symbol correctly
+      function renderSymbolHtml(symbol) {
+        if (symbol.id === 'rainbow7') {
+          return `
+            <div class="flex flex-col items-center">
+              <span class="text-3xl sm:text-5xl font-extrabold text-rainbow drop-shadow-[0_0_10px_rgba(236,72,153,0.3)] animate-pulse select-none">7</span>
+              <span class="text-[9px] text-[#8e9299] font-mono tracking-widest mt-1 uppercase font-bold">${symbol.name}</span>
+            </div>
+          `;
+        } else if (symbol.id === 'gold7') {
+          return `
+            <div class="flex flex-col items-center">
+              <span class="text-3xl sm:text-5xl font-extrabold text-gold drop-shadow-[0_0_10px_rgba(245,158,11,0.4)] select-none">7</span>
+              <span class="text-[9px] text-[#8e9299] font-mono tracking-widest mt-1 uppercase font-bold">${symbol.name}</span>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="flex flex-col items-center justify-center">
+              <span class="text-3xl sm:text-[2.8rem] transition-transform hover:scale-110 duration-150 select-none">${symbol.emoji}</span>
+              <span class="text-[9px] text-[#8e9299] font-mono tracking-widest mt-1 uppercase font-semibold">${symbol.name}</span>
+            </div>
+          `;
+        }
+      }
+
+      // Populate payout rules table layout
+      function renderPayoutTable() {
+        const body = document.getElementById('payout-table-body');
+        body.innerHTML = symbols.filter(s => s.id !== 'blank').map(s => {
+          let styleLabel = "";
+          if (s.id === 'rainbow7') styleLabel = "text-rainbow font-extrabold";
+          else if (s.id === 'gold7') styleLabel = "text-gold font-extrabold";
+          else styleLabel = "text-white";
+
+          const hitPayout = currentBet * s.multiplier * 10;
+          const jpPayout = currentBet * s.multiplier * 3;
+
+          let payoutValHit = `${hitPayout} pt`;
+          let payoutValJP = `${jpPayout} pt`;
+          let probPct = ((s.weight / 100) * 100).toFixed(1);
+
+          if (s.id === 'replay') {
+            payoutValHit = `🔄 リプレイ+3回復`;
+            payoutValJP = `🔄 リプレイ+1回`;
+          }
+
+          return `
+            <tr class="hover:bg-slate-900/40 transition-colors">
+              <td class="py-2 flex items-center gap-2">
+                <span class="text-lg">${s.id === 'rainbow7' || s.id === 'gold7' ? '7' : s.emoji}</span>
+                <span class="font-bold ${styleLabel}">${s.name}</span>
+              </td>
+              <td class="py-2 text-right font-mono text-[#8e9299]">${probPct}%</td>
+              <td class="py-2 text-right font-mono font-bold text-amber-400">${payoutValHit}</td>
+              <td class="py-2 text-right font-mono font-bold text-pink-400/90">${payoutValJP}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Initialization of reel renders on the screen inside standard visual grid containers
+      function initReels() {
+        for (let i = 0; i < 3; i++) {
+          renderReelScroll(i, 0);
+        }
+      }
+
+      // 4. Mathematical spin engine models
+      // getVisibleSymbolsFromStrip is defined in section 1 above
+
+      // Animated scrolling functions of reel strips
+      function animateReel(reelIdx) {
+        if (!reelsSpinning[reelIdx]) return;
+
+        const strip = reelStrips[reelIdx];
+        const len = strip.length;
+
+        // Increment fractional index position smoothly
+        reelPositions[reelIdx] = (reelPositions[reelIdx] + reelSpeeds[reelIdx]) % len;
+        
+        // Render scroll visually with appropriate speed ratio for blur
+        renderReelScroll(reelIdx, reelSpeeds[reelIdx]);
+
+        spinFrameRequestIds[reelIdx] = requestAnimationFrame(() => animateReel(reelIdx));
+      }
+
+      // Handle single reel stop clicks manually (stops instantly at pre-calculated index)
+      function stopReel(reelIdx) {
+        if (!isPlaying || !reelsSpinning[reelIdx]) return;
+        
+        cancelAnimationFrame(spinFrameRequestIds[reelIdx]);
+        reelsSpinning[reelIdx] = false;
+
+        // Play authentic mechanical drop click audio chime!
+        soundEngine.playReelStop(reelIdx);
+
+        const strip = reelStrips[reelIdx];
+        const targetIdx = stopTargetIndices[reelIdx];
+
+        // Lock onto clean target center alignment
+        reelPositions[reelIdx] = targetIdx;
+        renderReelScroll(reelIdx, 0);
+
+        // Toggle state of corresponding stop button
+        const btn = document.getElementById(`stop-btn-${reelIdx}`);
+        btn.disabled = true;
+        btn.className = 'py-3 sm:py-4 rounded-xl flex flex-col items-center justify-center border font-bold uppercase tracking-wider select-none bg-slate-900 border-slate-800 text-slate-500 opacity-40 cursor-not-allowed';
+
+        // Mechanical rebound jitter bounce
+        const container = document.getElementById(`reel-container-${reelIdx}`);
+        container.classList.add('transition-transform', 'duration-150');
+        container.style.transform = `translateY(4px)`;
+        setTimeout(() => {
+          container.style.transform = `translateY(-2px)`;
+          setTimeout(() => {
+            container.style.transform = `translateY(0px)`;
+            setTimeout(() => {
+              container.classList.remove('transition-transform', 'duration-150');
+            }, 150);
+          }, 100);
+        }, 100);
+
+        // Save visible symbols for calculation checks
+        currentVisibleSymbols[reelIdx] = getVisibleSymbolsFromStrip(strip, targetIdx);
+
+        // Check if all 3 rollers are now down and silent
+        if (reelsSpinning.every(s => !s)) {
+          evaluateSpinResults();
+        }
+      }
+
+      // Check for three identical hits or Jackpots across valid paylines
+      function evaluateSpinResults() {
+        isPlaying = false;
+        
+        // Hide overlay guides and reset
+        document.getElementById('payline-overlay').classList.add('hidden');
+        for (let i = 0; i < 5; i++) {
+          document.getElementById(`svg-line-${i}`).classList.add('hidden');
+        }
+
+        // Establish grid: row 0 is Top, row 1 is Center, row 2 is Bottom
+        // Grid indices are [reel index][row index]
+        const grid = [
+          currentVisibleSymbols[0],
+          currentVisibleSymbols[1],
+          currentVisibleSymbols[2]
+        ];
+
+        // Layout mapping vectors for each of the 5 paylines
+        const lines = [
+          { name: "Top Horizontal Line", indices: [[0, 0], [1, 0], [2, 0]], svgIndex: 0 },
+          { name: "Center Horizontal Line", indices: [[0, 1], [1, 1], [2, 1]], svgIndex: 1 },
+          { name: "Bottom Horizontal Line", indices: [[0, 2], [1, 2], [2, 2]], svgIndex: 2 },
+          { name: "Diagonal Top-Left to Bottom-Right", indices: [[0, 0], [1, 1], [2, 2]], svgIndex: 3 },
+          { name: "Diagonal Bottom-Left to Top-Right", indices: [[0, 2], [1, 1], [2, 0]], svgIndex: 4 }
+        ];
+
+        let totalPaylineReward = 0;
+        let earnedFreeSpins = 0;
+        let hitsTriggered = [];
+        let jpsTriggered = [];
+
+        lines.forEach(line => {
+          const s1 = grid[line.indices[0][0]][line.indices[0][1]];
+          const s2 = grid[line.indices[1][0]][line.indices[1][1]];
+          const s3 = grid[line.indices[2][0]][line.indices[2][1]];
+
+          // CASE A: 3 symbols match (当たり Hit! - Blank id 'blank' yields nothing)
+          if (s1.id !== 'blank' && s1.id === s2.id && s2.id === s3.id) {
+            if (s1.id === 'replay') {
+              earnedFreeSpins += 3;
+              hitsTriggered.push({ name: `${s1.emoji} ${s1.name}`, payout: "Free Spin +3" });
+            } else {
+              const reward = currentBet * s1.multiplier * 10;
+              totalPaylineReward += reward;
+              hitsTriggered.push({ name: `${s1.emoji} ${s1.name}`, payout: `+${reward} pt` });
+            }
+            // Glow active line on the overlay svg
+            document.getElementById('payline-overlay').classList.remove('hidden');
+            document.getElementById(`svg-line-${line.svgIndex}`).classList.remove('hidden');
+          }
+          // CASE B: 2 matching symbols on that payline (Jackpot JP! - Blank is excluded)
+          else {
+            let matchedSymbol = null;
+            if (s1.id !== 'blank' && s2.id !== 'blank' && s1.id === s2.id) matchedSymbol = s1;
+            else if (s2.id !== 'blank' && s3.id !== 'blank' && s2.id === s3.id) matchedSymbol = s2;
+            else if (s1.id !== 'blank' && s3.id !== 'blank' && s1.id === s3.id) matchedSymbol = s1;
+
+            if (matchedSymbol) {
+              if (matchedSymbol.id === 'replay') {
+                earnedFreeSpins += 1;
+                jpsTriggered.push({ name: `${matchedSymbol.emoji} ${matchedSymbol.name} JP`, payout: "Free Spin +1" });
+              } else {
+                const reward = currentBet * matchedSymbol.multiplier * 3;
+                totalPaylineReward += reward;
+                jpsTriggered.push({ name: `${matchedSymbol.emoji} ${matchedSymbol.name} JP`, payout: `+${reward} pt` });
+              }
+              document.getElementById('payline-overlay').classList.remove('hidden');
+              document.getElementById(`svg-line-${line.svgIndex}`).classList.remove('hidden');
+            }
+          }
+        });
+
+        // Apply reward payout balance
+        if (totalPaylineReward > 0) {
+          balance += totalPaylineReward;
+          stats.totalWinsVolume += totalPaylineReward;
+          if (totalPaylineReward > stats.maxWin) {
+            stats.maxWin = totalPaylineReward;
+          }
+          document.getElementById('balance-input').value = balance;
+        }
+
+        if (earnedFreeSpins > 0) {
+          freeSpinsRemaining += earnedFreeSpins;
+          stats.countReplay += 1;
+        }
+
+        // Set update stats counts
+        stats.totalSpins += 1;
+        if (hitsTriggered.length > 0) {
+          stats.countHit += hitsTriggered.length;
+          stats.winCount += 1;
+          soundEngine.playHit();
+        } else if (jpsTriggered.length > 0) {
+          stats.countJP += jpsTriggered.length;
+          stats.winCount += 1;
+          soundEngine.playJackpot();
+        } else {
+          // Play standard single audio coin ring if they got free spins
+          if (earnedFreeSpins > 0) {
+            soundEngine.playCoin();
+          }
+        }
+
+        // Output Status message box
+        const messageEl = document.getElementById('game-message');
+        const billboard = document.getElementById('win-billboard');
+        const spinsPanel = document.getElementById('free-spins-panel');
+
+        if (hitsTriggered.length > 0 || jpsTriggered.length > 0 || totalPaylineReward > 0) {
+          billboard.classList.remove('hidden');
+          document.getElementById('win-total-amount').textContent = `+${totalPaylineReward.toLocaleString()} pt`;
+          
+          let subDetails = [...hitsTriggered, ...jpsTriggered].map(x => `${x.name} 獲得 (${x.payout})`).join(', ');
+          if (earnedFreeSpins > 0) {
+            subDetails += ` / リプレイ獲得!`;
+          }
+          document.getElementById('win-detail-txt').textContent = subDetails;
+
+          messageEl.textContent = `🎉 盤面マッチング成功！ 配当率を合計して ${totalPaylineReward} pt を獲得しました！`;
+        } else {
+          billboard.classList.add('hidden');
+          if (freeSpinsRemaining > 0) {
+            messageEl.textContent = `惜しい！配当はなしですが、次にフリースピンが発動します。`;
+          } else {
+            messageEl.textContent = `ハズレ！ ベットを調整して、もう一度挑戦しましょう！`;
+          }
+        }
+
+        // Update statistics display widgets
+        updateStatsUi();
+
+        // Populate dynamic game log
+        addSessionLog(grid, totalPaylineReward, hitsTriggered, jpsTriggered, earnedFreeSpins);
+
+        // Turn spin button back on
+        const spinBtn = document.getElementById('spin-btn');
+        spinBtn.disabled = false;
+        spinBtn.textContent = '🚀 レバーを引く (SPIN/START)';
+        spinBtn.className = 'sm:col-span-3 py-4 rounded-2xl font-black text-lg tracking-wider text-white border-2 transition-all shadow-xl select-none cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] bg-indigo-600 hover:bg-indigo-500 border-indigo-400 shadow-indigo-600/30';
+
+        // Synchronize free spins count
+        if (freeSpinsRemaining > 0) {
+          spinsPanel.classList.remove('hidden');
+          document.getElementById('free-spins-count').textContent = freeSpinsRemaining;
+        } else {
+          spinsPanel.classList.add('hidden');
+        }
+
+        // Implement automatic spins callback if Auto Spin option was activated
+        if (isAutoMode) {
+          // Add a safety delay of 1.2s before next spin to let user absorb previous payout match
+          setTimeout(() => {
+            if (isAutoMode) {
+              triggerSpin();
+            }
+          }, 1400);
+        }
+      }
+
+      // Add a single spin sequence to the history logs layout
+      function addSessionLog(grid, payout, hits, jps, freeSpins) {
+        const logsContainer = document.getElementById('session-logs-container');
+        
+        // Remove empty placeholder
+        if (logsContainer.children.length === 1 && logsContainer.children[0].tagName === 'P') {
+          logsContainer.innerHTML = '';
+        }
+
+        const logItem = document.createElement('div');
+        logItem.className = 'bg-black/30 border border-[#303050]/50 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs';
+
+        // Reel grid row display style
+        const reelSymbolsStr = `
+          <div class="flex gap-2 items-center">
+            <span class="font-mono text-[9px] text-[#8e9299]">結果:</span>
+            <div class="flex bg-black/60 px-2.5 py-1 rounded-md border border-[#303050]/40 font-bold gap-3 text-sm">
+              <span class="${grid[0][1].textStyle || 'text-white'}">${grid[0][1].emoji === '7' ? '7' : grid[0][1].emoji}</span>
+              <span class="text-slate-600">•</span>
+              <span class="${grid[1][1].textStyle || 'text-white'}">${grid[1][1].emoji === '7' ? '7' : grid[1][1].emoji}</span>
+              <span class="text-slate-600">•</span>
+              <span class="${grid[2][1].textStyle || 'text-white'}">${grid[2][1].emoji === '7' ? '7' : grid[2][1].emoji}</span>
+            </div>
+          </div>
+        `;
+
+        let summaryTextHtml = '';
+        if (payout > 0 || freeSpins > 0) {
+          const labels = [...hits, ...jps].map(x => x.name).join(' + ');
+          const payoutPart = payout > 0 ? `<span class="text-amber-400 font-bold font-mono">+${payout} pt</span>` : '';
+          const fsPart = freeSpins > 0 ? `<span class="text-purple-400 font-black font-mono">🔄 FS+${freeSpins}</span>` : '';
+          
+          summaryTextHtml = `
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold rounded text-[10px] uppercase">WIN</span>
+              <span class="text-slate-300 font-medium">${labels} :</span>
+              <div class="flex gap-1.5 items-center">
+                ${payoutPart}
+                ${payoutPart && fsPart ? '<span class="text-slate-600">&</span>' : ''}
+                ${fsPart}
+              </div>
+            </div>
+          `;
+        } else {
+          summaryTextHtml = `
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 bg-slate-800 border border-slate-700 text-[#8e9299] rounded text-[10px]">MISS</span>
+              <span class="text-slate-500 font-medium">配当なし</span>
+            </div>
+          `;
+        }
+
+        logItem.innerHTML = `
+          ${reelSymbolsStr}
+          ${summaryTextHtml}
+        `;
+
+        logsContainer.insertBefore(logItem, logsContainer.firstChild);
+
+        // Cap displayed size to 15 logs to prevent memory leakage
+        if (logsContainer.children.length > 20) {
+          logsContainer.removeChild(logsContainer.lastChild);
+        }
+      }
+
+      // Synchronize overall statistical data elements out on the live panel widgets
+      function updateStatsUi() {
+        document.getElementById('stat-spins').textContent = stats.totalSpins;
+        
+        const rate = stats.totalSpins > 0 ? ((stats.winCount / stats.totalSpins) * 100).toFixed(1) : "0.0";
+        document.getElementById('stat-win-rate').textContent = rate;
+        
+        document.getElementById('stat-max-win').textContent = stats.maxWin.toLocaleString();
+        
+        const netValue = stats.totalWinsVolume - stats.totalBetsVolume;
+        const netFlowEl = document.getElementById('stat-net-flow');
+        const netWrapper = document.getElementById('stat-net-wrapper');
+        netFlowEl.textContent = (netValue >= 0 ? "+" : "") + netValue.toLocaleString();
+        
+        if (netValue > 0) {
+          netWrapper.className = "text-lg font-bold font-mono text-emerald-400 flex items-baseline gap-1";
+        } else if (netValue < 0) {
+          netWrapper.className = "text-lg font-bold font-mono text-rose-400 flex items-baseline gap-1";
+        } else {
+          netWrapper.className = "text-lg font-bold font-mono text-white flex items-baseline gap-1";
+        }
+
+        document.getElementById('stat-total-bets').textContent = `${stats.totalBetsVolume.toLocaleString()} pt`;
+        document.getElementById('stat-total-wins-volume').textContent = `+${stats.totalWinsVolume.toLocaleString()} pt`;
+        document.getElementById('stat-total-free-count').textContent = `${stats.totalFreeSpinsCount} 回`;
+
+        document.getElementById('stat-count-hit').textContent = `${stats.countHit} 回`;
+        document.getElementById('stat-count-jp').textContent = `${stats.countJP} 回`;
+        document.getElementById('stat-count-replay').textContent = `${stats.countReplay} 回`;
+      }
+
+      function triggerSpin() {
+        if (isPlaying) return;
+
+        // Synchronize manual balance input to system before spin
+        const balInput = document.getElementById('balance-input');
+        const enteredBal = parseInt(balInput.value);
+        if (!isNaN(enteredBal)) {
+          balance = enteredBal;
+        }
+
+        // Check ifフリースピンis active
+        const isFreeSpin = freeSpinsRemaining > 0;
+
+        if (!isFreeSpin && balance < currentBet) {
+          isAutoMode = false;
+          document.getElementById('auto-status-text').textContent = "OFF";
+          document.getElementById('auto-btn').className = "py-4 rounded-2xl font-black text-sm tracking-wider border text-slate-300 bg-slate-900 border-slate-800 hover:bg-slate-800 transition-all select-none cursor-pointer leading-tight";
+
+          document.getElementById('game-message').textContent = '❌ クレジットが不足しています！現在の所持金（Balance）を入力して増やしてください。';
+          soundEngine.playCoin();
+          return;
+        }
+
+        // Initialize sound
+        soundEngine.playSpin();
+
+        isPlaying = true;
+        reelsSpinning = [true, true, true];
+
+        // Deduct coin unless free spin
+        if (isFreeSpin) {
+          freeSpinsRemaining--;
+          stats.totalFreeSpinsCount++;
+          document.getElementById('free-spins-count').textContent = freeSpinsRemaining;
+        } else {
+          balance -= currentBet;
+          stats.totalBetsVolume += currentBet;
+          balInput.value = balance;
+        }
+
+        // Hide win dashboard banner
+        document.getElementById('win-billboard').classList.add('hidden');
+        document.getElementById('game-message').textContent = '🎰 リールが高速回転中！下のSTOPボタンを任意の順番で押して止めてください。';
+
+        // Pre-calculate target stopped strip markers based on current weights
+        stopTargetIndices = [
+          Math.floor(Math.random() * reelStrips[0].length),
+          Math.floor(Math.random() * reelStrips[1].length),
+          Math.floor(Math.random() * reelStrips[2].length)
+        ];
+
+        // Change spinning layout button
+        const spinBtn = document.getElementById('spin-btn');
+        spinBtn.disabled = true;
+        spinBtn.textContent = '🎰 回転中...';
+        spinBtn.className = 'sm:col-span-3 py-4 rounded-2xl font-bold text-lg text-slate-500 bg-slate-950 border-2 border-slate-900 shadow-none cursor-not-allowed';
+
+        // Turn STOP buttons on
+        for (let i = 0; i < 3; i++) {
+          const btn = document.getElementById(`stop-btn-${i}`);
+          btn.disabled = false;
+          btn.className = 'py-3 sm:py-4 rounded-xl flex flex-col items-center justify-center border font-bold uppercase tracking-wider transition-all duration-150 select-none cursor-pointer bg-rose-600 hover:bg-rose-500 text-white border-rose-400 hover:border-white shadow-lg shadow-rose-600/35 font-extrabold animate-pulse';
+        }
+
+        // Trigger individual animation frame requests
+        animateReel(0);
+        animateReel(1);
+        animateReel(2);
+
+        // If Auto spin is active, we trigger progressive automatic stop timers
+        if (isAutoMode) {
+          setTimeout(() => { if (isAutoMode && reelsSpinning[0]) stopReel(0); }, 900);
+          setTimeout(() => { if (isAutoMode && reelsSpinning[1]) stopReel(1); }, 1500);
+          setTimeout(() => { if (isAutoMode && reelsSpinning[2]) stopReel(2); }, 2100);
+        }
+      }
+
+      // 5. Setup Action Click and Keyboard Event Handlers
+      document.addEventListener('DOMContentLoaded', () => {
+        // Initialize visible symbols
+        initReels();
+        // Render payout guideline multiplier list
+        renderPayoutTable();
+
+        // Spin button triggers
+        document.getElementById('spin-btn').addEventListener('click', triggerSpin);
+
+        // Individual stop buttons triggers
+        document.getElementById(`stop-btn-0`).addEventListener('click', () => stopReel(0));
+        document.getElementById(`stop-btn-1`).addEventListener('click', () => stopReel(1));
+        document.getElementById(`stop-btn-2`).addEventListener('click', () => stopReel(2));
+
+        // Auto spin toggle mode
+        document.getElementById('auto-btn').addEventListener('click', () => {
+          isAutoMode = !isAutoMode;
+          const statusText = document.getElementById('auto-status-text');
+          const autoBtn = document.getElementById('auto-btn');
+          
+          if (isAutoMode) {
+            statusText.textContent = "ON (AUTO ACTIVE)";
+            autoBtn.className = "py-4 rounded-2xl font-black text-sm tracking-wider border text-white bg-pink-600 border-pink-400 hover:bg-pink-500 transition-all select-none cursor-pointer leading-tight animate-pulse";
+            
+            // If not playing, kickstart right away
+            if (!isPlaying) {
+              triggerSpin();
+            }
+          } else {
+            statusText.textContent = "OFF";
+            autoBtn.className = "py-4 rounded-2xl font-black text-sm tracking-wider border text-slate-300 bg-slate-900 border-slate-800 hover:bg-slate-800 transition-all select-none cursor-pointer leading-tight";
+          }
+        });
+
+        // Bet controls increments & presets
+        document.getElementById('bet-dec-btn').addEventListener('click', () => {
+          if (isPlaying) return;
+          if (currentBet > 10) {
+            currentBet -= 10;
+            document.getElementById('bet-display').textContent = `${currentBet} pt`;
+            renderPayoutTable();
+          }
+        });
+
+        document.getElementById('bet-inc-btn').addEventListener('click', () => {
+          if (isPlaying) return;
+          currentBet += 10;
+          document.getElementById('bet-display').textContent = `${currentBet} pt`;
+          renderPayoutTable();
+        });
+
+        document.getElementById('bet-preset-10').addEventListener('click', () => {
+          if (isPlaying) return;
+          currentBet = 10;
+          document.getElementById('bet-display').textContent = `${currentBet} pt`;
+          renderPayoutTable();
+        });
+
+        document.getElementById('bet-preset-30').addEventListener('click', () => {
+          if (isPlaying) return;
+          currentBet = 30;
+          document.getElementById('bet-display').textContent = `${currentBet} pt`;
+          renderPayoutTable();
+        });
+
+        // Sound Toggle Click Button Handler
+        document.getElementById('toggle-sound-btn').addEventListener('click', () => {
+          soundEngine.isMute = !soundEngine.isMute;
+          
+          const icon = document.getElementById('sound-icon');
+          const text = document.getElementById('sound-text');
+          
+          if (soundEngine.isMute) {
+            icon.textContent = "🔇";
+            text.textContent = "SOUND: OFF";
+          } else {
+            // Unmute and test trigger
+            icon.textContent = "🔊";
+            text.textContent = "SOUND: ON";
+            soundEngine.playCoin();
+          }
+        });
+
+        // Reset Statistics Button Click triggers
+        document.getElementById('reset-stats-btn').addEventListener('click', () => {
+          stats.totalSpins = 0;
+          stats.totalBetsVolume = 0;
+          stats.totalWinsVolume = 0;
+          stats.totalFreeSpinsCount = 0;
+          stats.maxWin = 0;
+          stats.winCount = 0;
+          stats.countHit = 0;
+          stats.countJP = 0;
+          stats.countReplay = 0;
+          
+          updateStatsUi();
+          document.getElementById('session-logs-container').innerHTML = `
+            <p class="text-slate-500 text-xs text-center py-4 italic">統計をリセットしました。</p>
+          `;
+          soundEngine.playCoin();
+        });
+
+        // Universal Spacer and Keyboard triggers (Space bar starts or stops reels)
+        window.addEventListener('keydown', (e) => {
+          if (e.code === 'Space') {
+            e.preventDefault();
+            
+            if (!isPlaying) {
+              triggerSpin();
+            } else {
+              // Stop first available active spinning block reel left to right
+              if (reelsSpinning[0]) stopReel(0);
+              else if (reelsSpinning[1]) stopReel(1);
+              else if (reelsSpinning[2]) stopReel(2);
+            }
+          }
+        });
+
+        // Initial volume check prompt
+        window.addEventListener('click', () => {
+          soundEngine.init();
+        }, { once: true });
+
+        // 6. Probability Customizer & Secret Cheat Mode Core Initialization ("_mityaki_")
+        const defaultWeights = {
+          rainbow7: 2,
+          gold7: 3,
+          star: 6,
+          bell: 10,
+          silverCoin: 13,
+          watermelon: 16,
+          cherry: 15,
+          replay: 10,
+          blank: 25
+        };
+
+        const slidersContainer = document.getElementById('cheat-sliders-container');
+        const totalWeightEl = document.getElementById('cheat-total-weight');
+        const cheatPanel = document.getElementById('cheat-panel');
+        const secretInput = document.getElementById('secret-command-input');
+
+        function renderSliders() {
+          const totalWeight = symbols.reduce((sum, s) => sum + s.weight, 0);
+          totalWeightEl.textContent = totalWeight;
+
+          slidersContainer.innerHTML = symbols.map(s => {
+            const pct = totalWeight > 0 ? ((s.weight / totalWeight) * 100).toFixed(1) : "0.0";
+            return `
+              <div class="flex flex-col gap-1.5 bg-black/40 border border-[#303050]/40 rounded-xl p-3">
+                <div class="flex items-center justify-between text-xs">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">${s.id === 'rainbow7' || s.id === 'gold7' ? '7' : s.emoji}</span>
+                    <span class="font-bold uppercase tracking-wider ${s.textStyle || 'text-slate-200'}">${s.name}</span>
+                  </div>
+                  <div class="font-[#8e9299] text-[11px]">
+                    出現確率: <span class="font-bold text-indigo-400 font-mono" id="prob-badge-${s.id}">${pct}%</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="${s.weight}"
+                    data-id="${s.id}"
+                    class="cheat-range flex-1 h-1.5 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    max="1000"
+                    value="${s.weight}"
+                    data-id="${s.id}"
+                    class="cheat-number w-16 bg-slate-950 border border-slate-800 text-slate-200 rounded text-center text-xs font-mono font-bold py-0.5 leading-none focus:border-indigo-500 outline-none"
+                  />
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          // Wire up range inputs
+          document.querySelectorAll('.cheat-range').forEach(input => {
+            input.addEventListener('input', (e) => {
+              const val = parseInt(e.target.value) || 0;
+              const symId = e.target.getAttribute('data-id');
+              const sym = symbols.find(s => s.id === symId);
+              if (sym) {
+                sym.weight = val;
+                applyWeightsRebuild();
+              }
+            });
+          });
+
+          // Wire up number inputs
+          document.querySelectorAll('.cheat-number').forEach(input => {
+            input.addEventListener('change', (e) => {
+              let val = parseInt(e.target.value);
+              if (isNaN(val) || val < 0) val = 0;
+              if (val > 1000) val = 1000;
+              e.target.value = val;
+              const symId = e.target.getAttribute('data-id');
+              const sym = symbols.find(s => s.id === symId);
+              if (sym) {
+                sym.weight = val;
+                applyWeightsRebuild();
+              }
+            });
+          });
+        }
+
+        function applyWeightsRebuild() {
+          rebuildReelStrips();
+          renderPayoutTable();
+          
+          const totalWeight = symbols.reduce((sum, s) => sum + s.weight, 0);
+          totalWeightEl.textContent = totalWeight;
+
+          symbols.forEach(s => {
+            const pct = totalWeight > 0 ? ((s.weight / totalWeight) * 100).toFixed(1) : "0.0";
+            
+            // Sync slider value
+            const slider = document.querySelector(`.cheat-range[data-id="${s.id}"]`);
+            if (slider) slider.value = s.weight;
+
+            // Sync number input value
+            const snum = document.querySelector(`.cheat-number[data-id="${s.id}"]`);
+            if (snum) snum.value = s.weight;
+
+            // Sync percentage text indicator
+            const badge = document.getElementById(`prob-badge-${s.id}`);
+            if (badge) badge.textContent = `${pct}%`;
+          });
+        }
+
+        // Custom presets logic
+        document.getElementById('cheat-preset-high').addEventListener('click', () => {
+          symbols.forEach(s => {
+            if (s.id === 'rainbow7') s.weight = 50;
+            else if (s.id === 'gold7') s.weight = 40;
+            else if (s.id === 'blank') s.weight = 5;
+            else s.weight = 2;
+          });
+          soundEngine.playCoin();
+          rebuildReelStrips();
+          renderPayoutTable();
+          renderSliders();
+        });
+
+        document.getElementById('cheat-preset-low').addEventListener('click', () => {
+          symbols.forEach(s => {
+            if (s.id === 'blank') s.weight = 90;
+            else s.weight = 1;
+          });
+          soundEngine.playCoin();
+          rebuildReelStrips();
+          renderPayoutTable();
+          renderSliders();
+        });
+
+        document.getElementById('cheat-reset-default').addEventListener('click', () => {
+          symbols.forEach(s => {
+            s.weight = defaultWeights[s.id];
+          });
+          soundEngine.playCoin();
+          rebuildReelStrips();
+          renderPayoutTable();
+          renderSliders();
+        });
+
+        // Passphrase entry check
+        secretInput.addEventListener('input', (e) => {
+          const val = e.target.value.trim();
+          if (val === '_mityaki_') {
+            cheatPanel.classList.remove('hidden');
+            renderSliders();
+            soundEngine.playCoin();
+          } else {
+            cheatPanel.classList.add('hidden');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
