@@ -475,14 +475,14 @@
       // Probability of big wins is reduced by lowering weights of high symbols and adding blank symbols ("ハズレ").
       const symbols = [
         { id: 'rainbow7', name: '虹７', emoji: '7', textStyle: 'text-rainbow', multiplier: 15, weight: 2 },
-        { id: 'gold7', name: '金７', emoji: '7', textStyle: 'text-gold', multiplier: 10, weight: 3 },
-        { id: 'star', name: '星', emoji: '⭐', textStyle: 'text-yellow-300', multiplier: 5, weight: 5 },
-        { id: 'bell', name: 'ベル', emoji: '🔔', textStyle: 'text-amber-400', multiplier: 3, weight: 8 },
-        { id: 'silverCoin', name: '銀貨', emoji: '🪙', textStyle: 'text-slate-300', multiplier: 2.5, weight:10 },
-        { id: 'watermelon', name: 'スイカ', emoji: '🍉', textStyle: '', multiplier: 2, weight: 15 },
-        { id: 'cherry', name: 'チェリー', emoji: '🍒', textStyle: '', multiplier: 1, weight: 20 },
-        { id: 'replay', name: 'Again', emoji: '🔄', textStyle: 'text-indigo-400', multiplier: 1, weight: 10 },
-        { id: 'blank', name: 'ハズレ', emoji: '✖️', textStyle: 'text-slate-600', multiplier: 0, weight: 70 }
+        { id: 'gold7', name: '金７', emoji: '7', textStyle: 'text-gold', multiplier: 10, weight: 18 },
+        { id: 'star', name: '星', emoji: '⭐', textStyle: 'text-yellow-300', multiplier: 5, weight: 80 },
+        { id: 'bell', name: 'ベル', emoji: '🔔', textStyle: 'text-amber-400', multiplier: 3, weight: 200 },
+        { id: 'silverCoin', name: '銀貨', emoji: '🪙', textStyle: 'text-slate-300', multiplier: 2.5, weight:500 },
+        { id: 'watermelon', name: 'スイカ', emoji: '🍉', textStyle: '', multiplier: 2, weight: 1200 },
+        { id: 'cherry', name: 'チェリー', emoji: '🍒', textStyle: '', multiplier: 1.5, weight: 1800 },
+        { id: 'replay', name: 'Again', emoji: '🔄', textStyle: 'text-indigo-400', multiplier: 1, weight: 2500 },
+        { id: 'blank', name: 'ハズレ', emoji: '✖️', textStyle: 'text-slate-600', multiplier: 0, weight: 3700 }
       ];
 
       // Build out an accurate physical mathematical strip reel containing 100 slots to enforce physical constraints
